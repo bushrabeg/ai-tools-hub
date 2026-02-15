@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>AI Tools Hub - Discover Open Source AI Tools</title>
+      <style>
+                * {
+                              margin: 0;
+                              padding: 0;
+                              box-sizing: border-box;
+                }
+
+                body {
+                              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+                              background: #fff;
+                              color: #000;
+                              line-height: 1.5;
+                }
+
+                header {
+                              border-bottom: 1px solid #efefef;
+                              padding: 12px 16px;
+                              position: sticky;
+                              top: 0;
+                              background: #fff;
+                              z-index: 100;
+                }
+
+                header h1 {
+                              font-size: 20px;
+                              font-weight: 700;
+                }
+
+                .container {
+                              max-width: 600px;
+                              margin: 0 auto;
+                }
+
+                .feed {
+                              border-right: 1px solid #efefef;
+                              border-left: 1px solid #efefef;
+                              min-height: 100vh;
+                }
+
+                .post {
+                              border-bottom: 1px solid #efefef;
+                              padding: 12px 16px;
+                              cursor: pointer;
+                              transition: background 0.2s;
+                }
+
+                .post:hover {
+                              background: #f7f7f7;
+                }
+
+                .post-author {
+                              font-size: 15px;
+                              color: #666;
+                              margin-bottom: 4px;
+                }
+
+                .post-author strong {
+                              color: #000;
+                }
+
+                .post-content {
+                              font-size: 15px;
+                              margin-bottom: 12px;
+                              line-height: 1.4;
+                }
+
+                .post-title {
+                              font-weight: 500;
+                              color: #000;
+                              display: block;
+                              margin-bottom: 8px;
+                }
+
+                .post-meta {
+                              font-size: 13px;
+                              color: #666;
+                              display: flex;
+                              gap: 12px;
+                }
+
+                .post-link {
+                              color: #1da1f2;
+                              text-decoration: none;
+                }
+
+                .post-link:hover {
+                              text-decoration: underline;
+                }
+
+                .category-badge {
+                              display: inline-block;
+                              background: #f0f0f0;
+                              padding: 4px 12px;
+                              border-radius: 16px;
+                              font-size: 13px;
+                              margin-right: 8px;
+                              color: #666;
+                              margin-top: 8px;
+                }
+
+                .loading {
+                              text-align: center;
+                              padding: 40px 20px;
+                              color: #666;
+                }
+
+                .error {
+                              padding: 20px;
+                              background: #fff5f5;
+                              color: #c93d56;
+                              text-align: center;
+                }
+
+                .filters {
+                              padding: 12px 16px;
+                              border-bottom: 1px solid #efefef;
+                              display: flex;
+                              gap: 8px;
+                              overflow-x: auto;
+                              overflow-y: hidden;
+                }
+
+                .filter-btn {
+                              padding: 8px 16px;
+                              border: 1px solid #ccc;
+                              background: #fff;
+                              border-radius: 20px;
+                              cursor: pointer;
+                              white-space: nowrap;
+                              font-size: 14px;
+                              transition: all 0.2s;
+                }
+
+                .filter-btn:hover {
+                              background: #f7f7f7;
+                }
+
+                .filter-btn.active {
+                              background: #000;
+                              color: #fff;
+                              border-color: #000;
+                }
+            </style>
+  </head>
+  <body>
+        <header>
+                  <div class="container">
+                                <h1>🤖 AI Tools Hub</h1>
+                              <p style="font-size: 13px; color: #666; margin-top: 4px;">Latest AI news & open source tools</p>p>
+                  </div>div>
+        </header>
+      
+      <div class="container">
+              <div class="filters" id="filters">
+                          <button class="filter-btn active" data-category="all">All</button>button>
+                          <button class="filter-btn" data-category="llm">LLMs</button>button>
+                          <button class="filter-btn" data-category="video">Video</button>button>
+                          <button class="filter-btn" data-category="voice">Voice</button>button>
+                          <button class="filter-btn" data-category="image">Image</button>button>
+                          <button class="filter-btn" data-category="search">Search</button>button>
+              </div>div>
+              
+              <div class="feed" id="feed">
+                          <div class="loading">Loading AI news...</div>div>
+              </div>div>
+      </div>div>
+  
+      <script>
+                const AI_KEYWORDS = {
+                              llm: ['GPT', 'Claude', 'Gemini', 'Mistral', 'Llama', 'language model'],
+                              video: ['video', 'Sora', 'Runway', 'D-ID'],
+                              voice: ['voice', 'audio', 'ElevenLabs', 'speech', 'TTS'],
+                              image: ['image', 'DALL-E', 'Midjourney', 'Stable Diffusion'],
+                              search: ['search', 'perplexity', 'RAG']
+                };
+
+                let allPosts = [];
+                let currentFilter = 'all';
+
+                async function fetchAINews() {
+                              try {
+                                                const topStoriesRes = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json');
+                                                const storyIds = await topStoriesRes.json();
+
+                                                const stories = await Promise.all(
+                                                                      storyIds.slice(0, 30).map(id => 
+                                                                                                fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`)
+                                                                                                                            .then(r => r.json())
+                                                                                                                    )
+                                                                  );
+
+                                                allPosts = stories
+                                                    .filter(story => story && story.title && (
+                                                                              story.title.toLowerCase().includes('ai') ||
+                                                                              story.title.toLowerCase().includes('llm') ||
+                                                                              story.title.toLowerCase().includes('open source')
+                                                                          ))
+                                                    .slice(0, 20);
+
+                                                renderPosts();
+                              } catch (error) {
+                                                document.getElementById('feed').innerHTML = '<div class="loading">Unable to load news</div>';
+                              }
+                }
+
+                function getCategoryForPost(title) {
+                              const titleLower = title.toLowerCase();
+                              for (const [category, keywords] of Object.entries(AI_KEYWORDS)) {
+                                                if (keywords.some(kw => titleLower.includes(kw.toLowerCase()))) {
+                                                                      return category;
+                                                }
+                              }
+                              return 'ai';
+                }
+
+                function renderPosts() {
+                              const feed = document.getElementById('feed');
+
+                              const filtered = currentFilter === 'all' 
+                                  ? allPosts 
+                                                : allPosts.filter(post => getCategoryForPost(post.title) === currentFilter);
+
+                              if (filtered.length === 0) {
+                                                feed.innerHTML = '<div class="loading">No posts found</div>';
+                                                return;
+                              }
+
+                              feed.innerHTML = filtered.map(post => `
+                                              <div class="post">
+                                                                  <div class="post-author">
+                                                                                          <strong>Hacker News</strong>
+                                                                                                              </div>
+                                                                                                                                  <a href="https://news.ycombinator.com/item?id=${post.id}" target="_blank" class="post-title">
+                                                                                                                                                          ${post.title}
+                                                                                                                                                                              </a>
+                                                                                                                                                                                                  <div class="post-meta">
+                                                                                                                                                                                                                          <span>↑ ${post.score || 0}</span>
+                                                                                                                                                                                                                                                  <span>${post.descendants || 0} comments</span>
+                                                                                                                                                                                                                                                                      </div>
+                                                                                                                                                                                                                                                                                          <span class="category-badge">${getCategoryForPost(post.title).toUpperCase()}</span>
+                                                                                                                                                                                                                                                                                                          </div>
+                                                                                                                                                                                                                                                                                                                      `).join('');
+                }
+
+                document.getElementById('filters').addEventListener('click', (e) => {
+                              if (e.target.classList.contains('filter-btn')) {
+                                                document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+                                                e.target.classList.add('active');
+                                                currentFilter = e.target.dataset.category;
+                                                renderPosts();
+                              }
+                });
+
+                fetchAINews();
+      </script>
+  </body>
+</html>html>
+      </script></h1>
+        </header>
+  </body>
+      </style></title>
+  </head>
